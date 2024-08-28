@@ -3,7 +3,7 @@ module github.com/wesql/wescale-cdc
 go 1.22.3
 
 require (
-	github.com/wesql/sqlparser v0.1.12
+	github.com/wesql/sqlparser v0.1.13
 	google.golang.org/grpc v1.66.0
 )
 
