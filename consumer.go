@@ -69,7 +69,6 @@ func (cc *CdcConsumer) Run() {
 
 	// 4. Read the stream and process the events.
 	var fields []*querypb.Field
-	var pkFields []*querypb.Field
 	var currentGTID string
 	var currentPK *querypb.QueryResult
 	// todo cdc: consider replace it with a channel
@@ -99,7 +98,7 @@ func (cc *CdcConsumer) Run() {
 				if len(event.Vgtid.GetShardGtids()) > 0 && len(event.Vgtid.GetShardGtids()[0].TablePKs) > 0 {
 					currentPK = event.Vgtid.GetShardGtids()[0].TablePKs[0].Lastpk
 					if currentPK != nil {
-						currentPK.Fields = pkFields
+						currentPK.Fields = cc.PkFields
 					} else {
 					}
 				}
