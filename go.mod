@@ -1,6 +1,6 @@
 module github.com/wesql/wescale-cdc
 
-go 1.23.0
+go 1.22.3
 
 require (
 	github.com/wesql/sqlparser v0.1.12
