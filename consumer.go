@@ -19,11 +19,14 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"io"
 	"log"
+	"net"
 	"strings"
 )
 
 type CdcConsumer struct {
-	Ctx             context.Context
+	Ctx context.Context
+
+	DialContextFunc func(ctx context.Context, address string) (net.Conn, error)
 	VtgateClient    vtgateservice.VitessClient
 	VtgateCloseFunc func()
 
@@ -41,12 +44,15 @@ func NewCdcConsumer() (cc *CdcConsumer) {
 	}
 	return &CdcConsumer{
 		Ctx: context.Background(),
+		DialContextFunc: func(ctx context.Context, address string) (net.Conn, error) {
+			return net.Dial("tcp", address)
+		},
 	}
 }
 
 func (cc *CdcConsumer) Open() {
 	// 1. Connect to the vtgate server.
-	cc.VtgateClient, cc.VtgateCloseFunc = openWeScaleClient()
+	cc.VtgateClient, cc.VtgateCloseFunc = cc.OpenWeScaleClient()
 	SpiOpen(cc)
 	// 2. Build ColumnInfo Map
 	cc.ReloadColInfoMap(DefaultConfig.TableSchema, DefaultConfig.SourceTableName)
@@ -200,9 +206,10 @@ func (cc *CdcConsumer) StartVStream() {
 	fmt.Printf("start streaming\n\n\n\n")
 }
 
-func openWeScaleClient() (vtgateservice.VitessClient, func()) {
+func (cc *CdcConsumer) OpenWeScaleClient() (vtgateservice.VitessClient, func()) {
 	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", DefaultConfig.WeScaleHost, DefaultConfig.WeScaleGrpcPort),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithContextDialer(cc.DialContextFunc),
 	)
 	if err != nil {
 		log.Fatalf("failed to connect to vtgate: %v", err)
