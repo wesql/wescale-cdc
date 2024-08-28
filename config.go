@@ -5,7 +5,6 @@ Licensed under the Apache v2(found in the LICENSE file in the root directory).
 package cdc
 
 import (
-	"flag"
 	"fmt"
 )
 
@@ -21,12 +20,12 @@ type CdcConfig struct {
 var DefaultConfig CdcConfig
 
 func init() {
-	flag.StringVar(&DefaultConfig.TableSchema, "TABLE_SCHEMA", "", "The table schema.")
-	flag.StringVar(&DefaultConfig.SourceTableName, "SOURCE_TABLE_NAME", "", "The source table name.")
-	flag.StringVar(&DefaultConfig.TargetTableName, "TARGET_TABLE_NAME", "", "The target table name.")
-	flag.StringVar(&DefaultConfig.FilterStatement, "FILTER_STATEMENT", "", "The filter statement.")
-	flag.StringVar(&DefaultConfig.WeScaleHost, "WESCALE_HOST", "127.0.0.1", "The WeScale host.")
-	flag.StringVar(&DefaultConfig.WeScaleGrpcPort, "WESCALE_GRPC_PORT", "15991", "The WeScale GRPC port.")
+	RegisterStringVar(&DefaultConfig.TableSchema, "TABLE_SCHEMA", "", "The table schema.")
+	RegisterStringVar(&DefaultConfig.SourceTableName, "SOURCE_TABLE_NAME", "", "The source table name.")
+	RegisterStringVar(&DefaultConfig.TargetTableName, "TARGET_TABLE_NAME", "", "The target table name.")
+	RegisterStringVar(&DefaultConfig.FilterStatement, "FILTER_STATEMENT", "", "The filter statement.")
+	RegisterStringVar(&DefaultConfig.WeScaleHost, "WESCALE_HOST", "127.0.0.1", "The WeScale host.")
+	RegisterStringVar(&DefaultConfig.WeScaleGrpcPort, "WESCALE_GRPC_PORT", "15991", "The WeScale GRPC port.")
 }
 
 func checkFlags() error {
