@@ -1,1 +1,1 @@
-# wescale_cdc
+# wescale-cdc
