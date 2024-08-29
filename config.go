@@ -5,9 +5,7 @@ Licensed under the Apache v2(found in the LICENSE file in the root directory).
 package cdc
 
 import (
-	"flag"
 	"fmt"
-	"os"
 )
 
 type CdcConfig struct {
@@ -28,10 +26,6 @@ func init() {
 	RegisterStringVar(&DefaultConfig.FilterStatement, "FILTER_STATEMENT", "", "The filter statement.")
 	RegisterStringVar(&DefaultConfig.WeScaleHost, "WESCALE_HOST", "127.0.0.1", "The WeScale host.")
 	RegisterStringVar(&DefaultConfig.WeScaleGrpcPort, "WESCALE_GRPC_PORT", "15991", "The WeScale GRPC port.")
-	logDir := os.Getenv("LOG_DIR")
-	if logDir != "" {
-		flag.Set("log_dir", logDir)
-	}
 }
 
 func checkFlags() error {

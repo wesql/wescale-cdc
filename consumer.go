@@ -18,7 +18,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"io"
-	"log"
 	"net"
 	"strings"
 )
@@ -40,7 +39,7 @@ func NewCdcConsumer() (cc *CdcConsumer) {
 	flag.Parse()
 	err := checkFlags()
 	if err != nil {
-		log.Fatalf("error: %v\n", err)
+		SpiFatalf("error: %v\n", err)
 	}
 	return &CdcConsumer{
 		Ctx: context.Background(),
@@ -76,11 +75,11 @@ func (cc *CdcConsumer) Run() {
 	for {
 		resp, err := cc.EventReader.Recv()
 		if err == io.EOF {
-			log.Printf("stream ended\n")
+			SpiLogf("stream ended\n")
 			return
 		}
 		if err != nil {
-			log.Printf("error: %v\n", err)
+			SpiLogf("error: %v\n", err)
 			return
 		}
 		eventList := resp.Events
@@ -110,7 +109,7 @@ func (cc *CdcConsumer) Run() {
 				// clear the result list
 				resultList = make([]*RowResult, 0)
 			case binlogdatapb.VEventType_COPY_COMPLETED:
-				log.Println("copy completed")
+				SpiLogf("copy completed\n")
 			}
 		}
 	}
@@ -173,7 +172,7 @@ func ProcessRowEvent(event *binlogdatapb.VEvent, fields []*querypb.Field, result
 func (cc *CdcConsumer) StartVStream() {
 	lastGtid, lastPK, err := SpiLoadGTIDAndLastPK(cc)
 	if err != nil {
-		log.Fatalf("failed to load gtid and lastpk: %v\n", err)
+		SpiFatalf("failed to load gtid and lastpk: %v\n", err)
 	}
 	vgtid := &binlogdatapb.VGtid{
 		ShardGtids: []*binlogdatapb.ShardGtid{{
@@ -200,9 +199,9 @@ func (cc *CdcConsumer) StartVStream() {
 	}
 	cc.EventReader, err = cc.VtgateClient.VStream(cc.Ctx, req)
 	if err != nil {
-		log.Fatalf("failed to create vstream: %v\n", err)
+		SpiFatalf("failed to create vstream: %v\n", err)
 	}
-	log.Printf("start streaming\n")
+	SpiLogf("start streaming\n")
 }
 
 func (cc *CdcConsumer) OpenWeScaleClient() (vtgateservice.VitessClient, func()) {
@@ -211,7 +210,7 @@ func (cc *CdcConsumer) OpenWeScaleClient() (vtgateservice.VitessClient, func()) 
 		grpc.WithContextDialer(cc.DialContextFunc),
 	)
 	if err != nil {
-		log.Fatalf("failed to connect to vtgate: %v\n", err)
+		SpiFatalf("failed to connect to vtgate: %v\n", err)
 	}
 	client := vtgateservice.NewVitessClient(conn)
 	closeFunc := func() {
@@ -399,12 +398,12 @@ func (cc *CdcConsumer) ExecuteBatch(
 	// store gtid and pk
 	err := SpiStoreGtidAndLastPK(currentGTID, currentPK, cc)
 	if err != nil {
-		log.Fatalf("failed to store gtid and lastpk: %v\n", err)
+		SpiFatalf("failed to store gtid and lastpk: %v\n", err)
 	}
 	// store table data
 	err = SpiStoreTableData(resultList, cc)
 	if err != nil {
-		log.Fatalf("failed to store table data: %v\n", err)
+		SpiFatalf("failed to store table data: %v\n", err)
 	}
 	// commit
 	queryList = append(queryList, &querypb.BoundQuery{
@@ -413,14 +412,14 @@ func (cc *CdcConsumer) ExecuteBatch(
 	// todo cdc: make sure it's actually in the same transaction
 	r, err := cc.VtgateClient.ExecuteBatch(cc.Ctx, &vtgatepb.ExecuteBatchRequest{Queries: queryList})
 	if err != nil {
-		log.Fatalf("failed to execute batch: %v\n", err)
+		SpiFatalf("failed to execute batch: %v\n", err)
 	}
 	for i, result := range r.Results {
 		if result.Error != nil {
-			log.Printf("failed to execute query %d: %v\n", i, result.Error)
+			SpiLogf("failed to execute query %d: %v\n", i, result.Error)
 		}
 	}
 	for _, query := range queryList {
-		log.Printf("execute %s\n", query.Sql)
+		SpiLogf("execute %s\n", query.Sql)
 	}
 }

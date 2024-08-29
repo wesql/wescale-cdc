@@ -27,3 +27,11 @@ var SpiStoreTableData = func(resultList []*RowResult, cc *CdcConsumer) error {
 var SpiClose = func(cc *CdcConsumer) {
 
 }
+
+var SpiLogf = func(format string, args ...interface{}) {
+
+}
+
+var SpiFatalf = func(format string, args ...interface{}) {
+
+}
