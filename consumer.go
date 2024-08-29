@@ -39,7 +39,7 @@ func NewCdcConsumer() (cc *CdcConsumer) {
 	flag.Parse()
 	err := checkFlags()
 	if err != nil {
-		SpiFatalf("error: %v\n", err)
+		SpiFatalf("cdc consumer error: %v\n", err)
 	}
 	return &CdcConsumer{
 		Ctx: context.Background(),
@@ -75,11 +75,11 @@ func (cc *CdcConsumer) Run() {
 	for {
 		resp, err := cc.EventReader.Recv()
 		if err == io.EOF {
-			SpiInfof("stream ended\n")
+			SpiInfof("cdc consumer ended\n")
 			return
 		}
 		if err != nil {
-			SpiInfof("error: %v\n", err)
+			SpiInfof("cdc consumer exit for error: %v\n", err)
 			return
 		}
 		eventList := resp.Events
@@ -109,7 +109,7 @@ func (cc *CdcConsumer) Run() {
 				// clear the result list
 				resultList = make([]*RowResult, 0)
 			case binlogdatapb.VEventType_COPY_COMPLETED:
-				SpiInfof("copy completed\n")
+				SpiInfof("cdc consumer copy completed\n")
 			}
 		}
 	}
@@ -172,7 +172,7 @@ func ProcessRowEvent(event *binlogdatapb.VEvent, fields []*querypb.Field, result
 func (cc *CdcConsumer) StartVStream() {
 	lastGtid, lastPK, err := SpiLoadGTIDAndLastPK(cc)
 	if err != nil {
-		SpiFatalf("failed to load gtid and lastpk: %v\n", err)
+		SpiFatalf("cdc consumer failed to load gtid and lastpk: %v\n", err)
 	}
 	vgtid := &binlogdatapb.VGtid{
 		ShardGtids: []*binlogdatapb.ShardGtid{{
@@ -199,9 +199,9 @@ func (cc *CdcConsumer) StartVStream() {
 	}
 	cc.EventReader, err = cc.VtgateClient.VStream(cc.Ctx, req)
 	if err != nil {
-		SpiFatalf("failed to create vstream: %v\n", err)
+		SpiFatalf("cdc consumer failed to create vstream: %v\n", err)
 	}
-	SpiInfof("start streaming\n")
+	SpiInfof("cdc consumer start streaming\n")
 }
 
 func (cc *CdcConsumer) OpenWeScaleClient() (vtgateservice.VitessClient, func()) {
@@ -210,7 +210,7 @@ func (cc *CdcConsumer) OpenWeScaleClient() (vtgateservice.VitessClient, func()) 
 		grpc.WithContextDialer(cc.DialContextFunc),
 	)
 	if err != nil {
-		SpiFatalf("failed to connect to vtgate: %v\n", err)
+		SpiFatalf("cdc consumer failed to connect to vtgate: %v\n", err)
 	}
 	client := vtgateservice.NewVitessClient(conn)
 	closeFunc := func() {
@@ -398,12 +398,12 @@ func (cc *CdcConsumer) ExecuteBatch(
 	// store gtid and pk
 	err := SpiStoreGtidAndLastPK(currentGTID, currentPK, cc)
 	if err != nil {
-		SpiFatalf("failed to store gtid and lastpk: %v\n", err)
+		SpiFatalf("cdc consumer failed to store gtid and lastpk: %v\n", err)
 	}
 	// store table data
 	err = SpiStoreTableData(resultList, cc)
 	if err != nil {
-		SpiFatalf("failed to store table data: %v\n", err)
+		SpiFatalf("cdc consumer failed to store table data: %v\n", err)
 	}
 	// commit
 	queryList = append(queryList, &querypb.BoundQuery{
@@ -412,14 +412,11 @@ func (cc *CdcConsumer) ExecuteBatch(
 	// todo cdc: make sure it's actually in the same transaction
 	r, err := cc.VtgateClient.ExecuteBatch(cc.Ctx, &vtgatepb.ExecuteBatchRequest{Queries: queryList})
 	if err != nil {
-		SpiFatalf("failed to execute batch: %v\n", err)
+		SpiFatalf("cdc consumer failed to execute batch: %v\n", err)
 	}
 	for i, result := range r.Results {
 		if result.Error != nil {
-			SpiInfof("failed to execute query %d: %v\n", i, result.Error)
+			SpiInfof("cdc consumer failed to execute query %d: %v\n", i, result.Error)
 		}
-	}
-	for _, query := range queryList {
-		SpiInfof("execute %s\n", query.Sql)
 	}
 }
