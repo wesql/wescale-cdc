@@ -75,11 +75,11 @@ func (cc *CdcConsumer) Run() {
 	for {
 		resp, err := cc.EventReader.Recv()
 		if err == io.EOF {
-			SpiLogf("stream ended\n")
+			SpiInfof("stream ended\n")
 			return
 		}
 		if err != nil {
-			SpiLogf("error: %v\n", err)
+			SpiInfof("error: %v\n", err)
 			return
 		}
 		eventList := resp.Events
@@ -109,7 +109,7 @@ func (cc *CdcConsumer) Run() {
 				// clear the result list
 				resultList = make([]*RowResult, 0)
 			case binlogdatapb.VEventType_COPY_COMPLETED:
-				SpiLogf("copy completed\n")
+				SpiInfof("copy completed\n")
 			}
 		}
 	}
@@ -201,7 +201,7 @@ func (cc *CdcConsumer) StartVStream() {
 	if err != nil {
 		SpiFatalf("failed to create vstream: %v\n", err)
 	}
-	SpiLogf("start streaming\n")
+	SpiInfof("start streaming\n")
 }
 
 func (cc *CdcConsumer) OpenWeScaleClient() (vtgateservice.VitessClient, func()) {
@@ -416,10 +416,10 @@ func (cc *CdcConsumer) ExecuteBatch(
 	}
 	for i, result := range r.Results {
 		if result.Error != nil {
-			SpiLogf("failed to execute query %d: %v\n", i, result.Error)
+			SpiInfof("failed to execute query %d: %v\n", i, result.Error)
 		}
 	}
 	for _, query := range queryList {
-		SpiLogf("execute %s\n", query.Sql)
+		SpiInfof("execute %s\n", query.Sql)
 	}
 }

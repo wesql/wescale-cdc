@@ -28,10 +28,10 @@ var SpiClose = func(cc *CdcConsumer) {
 
 }
 
-var SpiLogf = func(format string, args ...interface{}) {
+var SpiInfof = func(format string, args ...any) {
 
 }
 
-var SpiFatalf = func(format string, args ...interface{}) {
+var SpiFatalf = func(format string, args ...any) {
 
 }
