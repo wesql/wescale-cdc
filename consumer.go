@@ -387,36 +387,23 @@ func GenerateUpdateSQL(rowResult *RowResult, pkFields []*querypb.Field, colInfoM
 	return updateSQL, nil
 }
 
+// ExecuteBatch Here we provide an "at least once" way to deal with streaming data,
+// if you want to do it in an "exactly once" way, you can store data, gtid and lastpk
+// atomically, for example, you can store all of them inside a single transaction in
+// your SpiStoreTableData implementation and do nothing in SpiStoreGtidAndLastPK.
 func (cc *CdcConsumer) ExecuteBatch(
 	currentGTID string,
 	currentPK *querypb.QueryResult,
 	resultList []*RowResult,
 ) {
-	queryList := make([]*querypb.BoundQuery, 0)
-	// begin
-	queryList = append([]*querypb.BoundQuery{{Sql: "begin"}}, queryList...)
-	// store gtid and pk
-	err := SpiStoreGtidAndLastPK(currentGTID, currentPK, cc)
-	if err != nil {
-		SpiFatalf("cdc consumer failed to store gtid and lastpk: %v\n", err)
-	}
 	// store table data
-	err = SpiStoreTableData(resultList, cc)
+	err := SpiStoreTableData(resultList, cc)
 	if err != nil {
 		SpiFatalf("cdc consumer failed to store table data: %v\n", err)
 	}
-	// commit
-	queryList = append(queryList, &querypb.BoundQuery{
-		Sql: "commit",
-	})
-	// todo cdc: make sure it's actually in the same transaction
-	r, err := cc.VtgateClient.ExecuteBatch(cc.Ctx, &vtgatepb.ExecuteBatchRequest{Queries: queryList})
+	// store gtid and pk
+	err = SpiStoreGtidAndLastPK(currentGTID, currentPK, cc)
 	if err != nil {
-		SpiFatalf("cdc consumer failed to execute batch: %v\n", err)
-	}
-	for i, result := range r.Results {
-		if result.Error != nil {
-			SpiInfof("cdc consumer failed to execute query %d: %v\n", i, result.Error)
-		}
+		SpiFatalf("cdc consumer failed to store gtid and lastpk: %v\n", err)
 	}
 }
