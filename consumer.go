@@ -390,7 +390,7 @@ func GenerateUpdateSQL(rowResult *RowResult, pkFields []*querypb.Field, colInfoM
 // ExecuteBatch Here we provide an "at least once" way to deal with streaming data,
 // if you want to do it in an "exactly once" way, you can store data, gtid and lastpk
 // atomically, for example, you can store all of them inside a single transaction in
-// your SpiStoreTableData implementation and do nothing in SpiStoreGtidAndLastPK.
+// your SpiStoreTableData and SpiStoreGtidAndLastPK.
 func (cc *CdcConsumer) ExecuteBatch(
 	currentGTID string,
 	currentPK *querypb.QueryResult,
